@@ -58,5 +58,5 @@ void main() {
     out_color           = od.m_albedo;
     out_normal          = vec4( normalize( f_normal ) * 0.5f + 0.5f, 0.0f );
     out_position_depth  = vec4( f_position, linearDepth(gl_FragCoord.z) );
-    out_material        = vec4( od.m_metallic_roughness.rg, 1.0, 2.0 );
+    out_material        = vec4( od.m_metallic_roughness.rg, 1.0, 1.0 );
 }

@@ -79,13 +79,103 @@ vec3 evalDiffuse()
     return shading;
 }
 
+vec3 evalMicrofacet()
+{
+    // Retrieve material properties from textures
+    vec4 albedo = texture(i_albedo, f_uvs);
+    vec3 n = normalize(texture(i_normal, f_uvs).rgb * 2.0 - 1.0);
+    vec3 frag_pos = texture(i_position_and_depth, f_uvs).xyz;
+    vec4 material_params = texture(i_material, f_uvs);
 
+    float metallic = material_params.r;
+    float roughness = material_params.g;
+    vec3 F0 = mix(vec3(0.04), albedo.rgb, metallic); // Interpolate between dielectric and metallic F0
+    
+    vec3 v = normalize(per_frame_data.m_camera_pos.xyz - frag_pos);
+    vec3 shading = vec3(0.0);
+
+    for(uint id_light = 0; id_light < per_frame_data.m_number_of_lights; id_light++)
+    {
+        LightData light = per_frame_data.m_lights[id_light];
+        uint light_type = uint(floor(light.m_light_pos.a));
+        
+        vec3 l;
+        vec3 radiance;
+        
+        // Calculate light direction and radiance based on light type
+        switch(light_type)
+        {
+            case 0: // directional
+                l = normalize(light.m_light_pos.xyz);
+                radiance = light.m_radiance.rgb;
+                break;
+            case 1: // point
+                l = light.m_light_pos.xyz - frag_pos;
+                float dist = length(l);
+                l = normalize(l);
+                float att = 1.0 / (light.m_attenuattion.x + light.m_attenuattion.y * dist + light.m_attenuattion.z * dist * dist);
+                radiance = light.m_radiance.rgb * att;
+                break;
+            case 2: // ambient
+                shading += light.m_radiance.rgb * albedo.rgb;
+                continue; // Skip BRDF calculation for ambient
+        }
+        
+        // Calculate half vector
+        vec3 h = normalize(v + l);
+        
+        // Calculate dot products
+        float NdotV = max(dot(n, v), 0.0001);
+        float NdotL = max(dot(n, l), 0.0001);
+        float NdotH = max(dot(n, h), 0.0001);
+        float VdotH = max(dot(v, h), 0.0001);
+        
+        // 1. Normal Distribution Function (GGX/Trowbridge-Reitz)
+        float alpha = roughness * roughness;
+        float alpha2 = alpha * alpha;
+        float denom = (NdotH * NdotH) * (alpha2 - 1.0) + 1.0;
+        float D = alpha2 / (PI * denom * denom);
+        
+        // 2. Geometric term (Schlick)
+        float k = (roughness + 1.0) * (roughness + 1.0) / 8.0;
+        float G1_v = NdotV / (NdotV * (1.0 - k) + k);
+        float G1_l = NdotL / (NdotL * (1.0 - k) + k);
+        float G = G1_v * G1_l;
+        
+        // 3. Fresnel term (Modified Schlick)
+        float Fc = pow(1.0 - VdotH, 5.0);
+        vec3 F = F0 + (1.0 - F0) * pow(2.0, (-5.55473 * VdotH - 6.98316) * VdotH);
+        
+        // Combine terms for specular BRDF
+        vec3 specular = (D * F * G) / (4.0 * NdotV * NdotL);
+        
+        // Calculate diffuse (Lambert) - only for non-metals
+        vec3 diffuse = (1.0 - metallic) * albedo.rgb / PI;
+        
+        // Combine diffuse and specular
+        shading += (diffuse + specular) * radiance * NdotL;
+    }
+
+    return shading;
+}
 
 void main() 
 {
     float gamma = 2.2f;
     float exposure = 1.0f;
-    vec3 mapped = vec3( 1.0f ) - exp(-evalDiffuse() * exposure);
+
+    vec4 material_params = texture(i_material, f_uvs);
+    float material_type = material_params.g;
+
+    vec3 out_eval = vec3(0.0);
+    if (material_type == 0.5f) // Diffuse
+    {
+        out_eval = evalDiffuse();
+    } else {
+        out_eval = evalMicrofacet();
+    }
+
+    vec3 mapped = vec3( 1.0f ) - exp(-out_eval * exposure);
 
     out_color = vec4( pow( mapped, vec3( 1.0f / gamma ) ), 1.0 );
 }
