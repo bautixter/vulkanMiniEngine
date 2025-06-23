@@ -32,6 +32,7 @@ layout ( set = 0, binding = 1 ) uniform sampler2D i_albedo;
 layout ( set = 0, binding = 2 ) uniform sampler2D i_position_and_depth;
 layout ( set = 0, binding = 3 ) uniform sampler2D i_normal;
 layout ( set = 0, binding = 4 ) uniform sampler2D i_material;
+layout ( set = 0, binding = 5 ) uniform sampler2D i_ssao;
 
 
 layout(location = 0) out vec4 out_color;
@@ -175,7 +176,8 @@ void main()
         out_eval = evalMicrofacet();
     }
 
+    float occlusion = texture(i_ssao, f_uvs).r;
     vec3 mapped = vec3( 1.0f ) - exp(-out_eval * exposure);
 
-    out_color = vec4( pow( mapped, vec3( 1.0f / gamma ) ), 1.0 );
+    out_color = vec4( pow( mapped, vec3( 1.0f / gamma ) ), 1.0 ) * occlusion;
 }

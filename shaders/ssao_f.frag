@@ -1,9 +1,9 @@
 #version 460
 
 #define SSAO_KERNEL_SIZE 64
-#define SSAO_RADIUS 0.5
-#define SSAO_BIAS 0.025
-#define SSAO_SHARPNESS 2.0  // Controls edge sharpness of occlusion
+#define SSAO_RADIUS 1.0      // Increased from 1.5 - larger sampling radius
+#define SSAO_BIAS 0.02       // Decreased from 0.05 - less bias means stronger occlusion
+#define SSAO_SHARPNESS 3.0   // Increased from 2.0 - sharper contrast
 
 layout(location = 0) in vec2 f_uvs;
 layout(location = 0) out float out_occlusion;
@@ -63,16 +63,22 @@ void main() {
         // Range check and occlusion calculation
         float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(fragPosVS.z - sampleDepth));
         float depthDifference = sampleDepth - samplePosVS.z;
+          // Smoother occlusion contribution with sharpness control
+        float occlusionContrib = rangeCheck * smoothstep(SSAO_BIAS, SSAO_BIAS + 0.05, depthDifference);
         
-        // Smoother occlusion contribution with sharpness control
-        occlusion += rangeCheck * smoothstep(SSAO_BIAS, SSAO_BIAS + 0.1, depthDifference);
+        // Apply additional power curve to strengthen occlusion
+        occlusionContrib = pow(occlusionContrib, 1.5);
+        
+        occlusion += occlusionContrib;
     }
-    
-    // Normalize and invert result
+      // Normalize and invert result
     occlusion = 1.0 - (occlusion / float(SSAO_KERNEL_SIZE));
     
-    // Optional: enhance contrast
+    // Apply power curve for contrast and additional strength multiplier
     occlusion = pow(occlusion, SSAO_SHARPNESS);
+    
+    // Additional strength multiplier - clamp to prevent complete black
+    occlusion = max(0.1, occlusion * 0.7);  // 0.7 multiplier makes it stronger, 0.1 minimum keeps some ambient light
     
     out_occlusion = occlusion;
 }
