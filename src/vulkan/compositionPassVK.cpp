@@ -35,11 +35,9 @@ CompositionPassVK::CompositionPassVK(
     }
 }
 
-
 CompositionPassVK::~CompositionPassVK()
 {
 }
-
 
 bool CompositionPassVK::initialize()
 {
