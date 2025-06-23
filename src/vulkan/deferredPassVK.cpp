@@ -553,21 +553,37 @@ void DeferredPassVK::createPipelines()
 
 void DeferredPassVK::createDescriptorLayout()
 {
-    // PER FRAME
+    // PER FRAME BINDINGS
+    // ------------------------------------------------------------------------------------
+
     VkDescriptorSetLayoutBinding per_frame_binding = {};
     per_frame_binding.binding                      = 0;
     per_frame_binding.descriptorCount              = 1;
     per_frame_binding.descriptorType               = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     per_frame_binding.stageFlags                   = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
+    // Position + Depth coming from depthPassVK
+    VkDescriptorSetLayoutBinding position_depth_binding = {};
+    position_depth_binding.binding                      = 1;
+    position_depth_binding.descriptorCount              = 1;
+    position_depth_binding.descriptorType               = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    position_depth_binding.stageFlags                   = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    std::array<VkDescriptorSetLayoutBinding, 2> bindings = {
+    per_frame_binding,
+    position_depth_binding
+    };
+
     VkDescriptorSetLayoutCreateInfo set_per_frame_info = {};
-    set_per_frame_info.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    set_per_frame_info.pNext        = nullptr;
+    set_per_frame_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    set_per_frame_info.pNext = nullptr;
     set_per_frame_info.bindingCount = 1;
-    set_per_frame_info.flags        = 0;
-    set_per_frame_info.pBindings    = &per_frame_binding;
+    set_per_frame_info.bindingCount = static_cast<uint32_t>(bindings.size());
+    set_per_frame_info.pBindings = bindings.data();
 
     // PER OBJECT
+    // ------------------------------------------------------------------------------------
+
     VkDescriptorSetLayoutBinding per_object_binding = {};
     per_object_binding.binding                      = 0;
     per_object_binding.descriptorCount              = 1;
