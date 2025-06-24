@@ -42,7 +42,7 @@ vec3 evalDiffuse()
 {
     vec4  albedo       = texture( i_albedo  , f_uvs );
     vec3  n            = normalize( texture( i_normal, f_uvs ).rgb * 2.0 - 1.0 );    
-    vec3  frag_pos     = texture( i_position_and_depth, f_uvs ).xyz;
+    vec3  frag_pos     = texture( i_position_and_depth, f_uvs ).xyz; // view space
     vec3  shading = vec3( 0.0 );
 
 
@@ -55,14 +55,21 @@ vec3 evalDiffuse()
         {
             case 0: //directional
             {
-                vec3 l = normalize( light.m_light_pos.xyz );
-                shading += max( dot( n, l ), 0.0 ) * albedo.rgb;
+                // Transform world space direction to view space
+                vec4 world_dir = vec4(light.m_light_pos.xyz, 0.0);
+                vec3 view_dir = (per_frame_data.m_view * world_dir).xyz;
+                vec3 l = normalize( view_dir );
+                shading += max( dot( n, l ), 0.0 ) * albedo.rgb * light.m_radiance.rgb;
                 break;
             }
             case 1: //point
             {
-                vec3 l = light.m_light_pos.xyz - frag_pos;
+                // Transform world space position to view space
+                vec4 world_pos = vec4(light.m_light_pos.xyz, 1.0);
+                vec3 view_light_pos = (per_frame_data.m_view * world_pos).xyz;
+                vec3 l = view_light_pos - frag_pos;
                 float dist = length( l );
+                l = normalize( l );
                 float att = 1.0 / (light.m_attenuattion.x + light.m_attenuattion.y * dist + light.m_attenuattion.z * dist * dist );
                 vec3 radiance = light.m_radiance.rgb * att;
 
@@ -102,21 +109,27 @@ vec3 evalMicrofacet()
         
         vec3 l;
         vec3 radiance;
-        
-        // Calculate light direction and radiance based on light type
+          // Calculate light direction and radiance based on light type
         switch(light_type)
         {
             case 0: // directional
-                l = normalize(light.m_light_pos.xyz);
-                radiance = light.m_radiance.rgb;
-                break;
+                {
+                    // Transform world space direction to view space
+                    vec4 world_dir = vec4(light.m_light_pos.xyz, 0.0);
+                    vec3 view_dir = (per_frame_data.m_view * world_dir).xyz;
+                    l = normalize(view_dir);
+                    radiance = light.m_radiance.rgb;
+                    break;
+                }
             case 1: // point
-                l = light.m_light_pos.xyz - frag_pos;
-                float dist = length(l);
-                l = normalize(l);
-                float att = 1.0 / (light.m_attenuattion.x + light.m_attenuattion.y * dist + light.m_attenuattion.z * dist * dist);
-                radiance = light.m_radiance.rgb * att;
-                break;
+                {
+                    l = light.m_light_pos.xyz - frag_pos;
+                    float dist = length(l);
+                    l = normalize(l);
+                    float att = 1.0 / (light.m_attenuattion.x + light.m_attenuattion.y * dist + light.m_attenuattion.z * dist * dist);
+                    radiance = light.m_radiance.rgb * att;
+                    break;
+                }
             case 2: // ambient
                 shading += light.m_radiance.rgb * albedo.rgb;
                 continue; // Skip BRDF calculation for ambient

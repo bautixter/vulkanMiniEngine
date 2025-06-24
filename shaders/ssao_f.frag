@@ -1,7 +1,7 @@
 #version 460
 
 #define SSAO_KERNEL_SIZE 64
-#define SSAO_RADIUS 1.0      // Increased from 1.5 - larger sampling radius
+#define SSAO_RADIUS 1.5      // Increased from 1.5 - larger sampling radius
 #define SSAO_BIAS 0.02       // Decreased from 0.05 - less bias means stronger occlusion
 #define SSAO_SHARPNESS 3.0   // Increased from 2.0 - sharper contrast
 
@@ -23,13 +23,13 @@ layout(set = 0, binding = 0) uniform PerFrameData {
     mat4 inv_view;
 } per_frame_data;
 
-void main() {
-    // Get view-space position and normal
+void main() {    // Get view-space position and normal
     vec3 fragPosVS = texture(position_texture, f_uvs).xyz;
     vec3 normalVS = normalize(texture(normal_texture, f_uvs).xyz * 2.0 - 1.0); // Unpack from [0,1] to [-1,1]
     
-    // Early out for background pixels (assuming depth is cleared to far plane)
-    if (fragPosVS.z >= per_frame_data.projection[3][2] / per_frame_data.projection[2][2]) {
+    // Early out for background pixels - check if we have valid geometry data
+    // Background pixels typically have zero or very small position values
+    if (length(fragPosVS) < 0.01) {
         out_occlusion = 1.0;
         return;
     }
@@ -54,7 +54,7 @@ void main() {
         
         // Project sample position
         vec4 offset = per_frame_data.projection * vec4(samplePosVS, 1.0);
-        offset.xyz /= offset.w;                // Perspective divide
+        offset.xyz /= offset.w;               // Perspective divide
         offset.xy = offset.xy * 0.5 + 0.5;    // Transform to [0,1] range
         
         // Get depth of nearest geometry at sample position
@@ -63,7 +63,8 @@ void main() {
         // Range check and occlusion calculation
         float rangeCheck = smoothstep(0.0, 1.0, SSAO_RADIUS / abs(fragPosVS.z - sampleDepth));
         float depthDifference = sampleDepth - samplePosVS.z;
-          // Smoother occlusion contribution with sharpness control
+        
+        // Smoother occlusion contribution with sharpness control
         float occlusionContrib = rangeCheck * smoothstep(SSAO_BIAS, SSAO_BIAS + 0.05, depthDifference);
         
         // Apply additional power curve to strengthen occlusion
@@ -71,14 +72,12 @@ void main() {
         
         occlusion += occlusionContrib;
     }
-      // Normalize and invert result
+
+    // Normalize and invert result
     occlusion = 1.0 - (occlusion / float(SSAO_KERNEL_SIZE));
     
     // Apply power curve for contrast and additional strength multiplier
     occlusion = pow(occlusion, SSAO_SHARPNESS);
-    
-    // Additional strength multiplier - clamp to prevent complete black
-    occlusion = max(0.1, occlusion * 0.7);  // 0.7 multiplier makes it stronger, 0.1 minimum keeps some ambient light
-    
+        
     out_occlusion = occlusion;
 }

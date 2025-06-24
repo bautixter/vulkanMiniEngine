@@ -12,6 +12,9 @@
 #include "diffuse.h"
 #include "microfacets.h"
 
+// standard includes
+#include <chrono>
+
 // vulkan includes
 #include "vulkan/rendererVK.h"
 #include "vulkan/renderPassVK.h"
@@ -23,7 +26,7 @@
 #include "vulkan/depthPassVK.h"
 #include "vulkan/ssaoPassVK.h"
 
-
+// defines for camera rotation
 
 using namespace MiniEngine;
 
@@ -334,9 +337,20 @@ void Engine::destroyRenderPasses()
 
 
 void Engine::updateGlobalBuffers()
-{
-    assert( m_runtime.m_per_frame_buffer[ m_current_frame % 3 ] );
+{    assert( m_runtime.m_per_frame_buffer[ m_current_frame % 3 ] );
     assert( m_scene );
+
+    Camera& cam = const_cast<Camera&>(m_scene->getCamera());
+    
+    // Time-based rotation for consistent speed regardless of framerate
+    static auto last_time = std::chrono::high_resolution_clock::now();
+    auto current_time = std::chrono::high_resolution_clock::now();
+    float delta_time = std::chrono::duration<float>(current_time - last_time).count();
+    last_time = current_time;
+    
+    // Rotate at 30 degrees per second (consistent regardless of FPS)
+    float rotation_speed = glm::radians(30.0f); // degrees per second
+    cam.rotateAroundOrigin(rotation_speed * delta_time);
 
     //global settings
     PerFrameData perframe_data;

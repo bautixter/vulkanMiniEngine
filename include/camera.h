@@ -62,6 +62,8 @@ namespace MiniEngine
             return m_position;
         }
 
+        void rotateAroundOrigin(float radians);
+
         Matrix4f getView();
 
         Matrix4f getProjection();
