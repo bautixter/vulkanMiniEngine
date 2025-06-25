@@ -24,12 +24,13 @@ layout(set = 0, binding = 0) uniform PerFrameData {
 } per_frame_data;
 
 void main() {    // Get view-space position and normal
-    vec3 fragPosVS = texture(position_texture, f_uvs).xyz;
+    vec4 fragPosDepthVS = texture(position_texture, f_uvs);
+    vec3 fragPosVS = fragPosDepthVS.xyz; // Position in view space
+    float fragDepthVS = fragPosDepthVS.w; // Depth in view space
     vec3 normalVS = normalize(texture(normal_texture, f_uvs).xyz * 2.0 - 1.0); // Unpack from [0,1] to [-1,1]
     
-    // Early out for background pixels - check if we have valid geometry data
-    // Background pixels typically have zero or very small position values
-    if (length(fragPosVS) < 0.01) {
+    // If depth is zero, assume no occlusion (e.g., background or empty space)
+    if (fragDepthVS == 0.0) {
         out_occlusion = 1.0;
         return;
     }
