@@ -49,7 +49,7 @@ bool SsaoPassVK::initialize()
 
     //SHADER STAGES
     {
-        { // difuse
+        {
             VkShaderModule vert_module = m_runtime.m_shader_registry->loadShader("./shaders/fullscreen_quad_v.spv", VK_SHADER_STAGE_VERTEX_BIT);
             VkShaderModule frag_module = m_runtime.m_shader_registry->loadShader("./shaders/ssao_f.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -286,7 +286,8 @@ void SsaoPassVK::createRenderPass()
     subpass_description.pResolveAttachments = nullptr;
 
     // Subpass dependencies for layout transitions
-    std::array<VkSubpassDependency, 1> dependencies = { {} };    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+    std::array<VkSubpassDependency, 1> dependencies = { {} };
+    dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
     dependencies[0].dstSubpass = 0;
     dependencies[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     dependencies[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;

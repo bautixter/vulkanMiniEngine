@@ -25,6 +25,7 @@
 #include "vulkan/utilsVK.h"
 #include "vulkan/depthPassVK.h"
 #include "vulkan/ssaoPassVK.h"
+#include "vulkan/blurPassVK.h"
 
 // defines for camera rotation
 
@@ -294,13 +295,23 @@ void Engine::createRenderPasses ()
 
     m_render_passes.push_back( ssao_pass );
 
+    auto blur_ssao_pass = std::make_shared<BlurPassVK>(
+        m_runtime,
+        m_render_target_attachments.m_ssao_attachment,
+        m_render_target_attachments.m_ssao_blur_attachment
+        );
+
+    blur_ssao_pass->initialize();
+
+    m_render_passes.push_back(blur_ssao_pass);
+
     auto composition_pass = std::make_shared<CompositionPassVK>(
         m_runtime,
         m_render_target_attachments.m_color_attachment,
         m_render_target_attachments.m_position_depth_attachment,
         m_render_target_attachments.m_normal_attachment,
         m_render_target_attachments.m_material_attachment,
-        m_render_target_attachments.m_ssao_attachment,
+        m_render_target_attachments.m_ssao_blur_attachment,
         m_runtime.m_renderer->getWindow().getSwapChainImages()
     );
 
