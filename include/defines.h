@@ -39,6 +39,8 @@
 #include <tinyformat/tinyformat.h>
 #include <tiny_obj_loader.h>
 
+// Custom defines
+#define CAMERA_ROTATION
 
 // GRAPHIC API
 #define VK_USE_PLATFORM_WIN32_KHR

@@ -12,7 +12,7 @@
 		<string name="filename" value=".\scenes\bunny\bunny.obj"/>
 		<bsdf type="diffuse"/>
 		<transform name="toWorld">
-			<translate value="0.0, -0.1, 0.0"/>
+			<translate value="0.0, 0.0, 0.0"/>
 		</transform>
 	</mesh>
 
@@ -30,7 +30,7 @@
 		<transform name="toWorld">
 			<lookat
 				target="0, 0.1, 0"
-				origin="0, 0, 1.0"
+				origin="0, 0.1, 1.0"
 				up="0, 1, 0"
 			/>
 		</transform>

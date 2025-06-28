@@ -86,14 +86,14 @@ namespace MiniEngine
         // Private Members
         // ---------------------------------------------------
 
-        std::array<MaterialPipeline, 2>  m_pipelines;        // Pipelines for different material configurations (e.g., skinned/static).
+        MaterialPipeline                 m_pipeline;          // Single pipeline for all entities in depth pass.
         VkRenderPass                     m_render_pass;      // Vulkan render pass object for depth writing.
         VkDescriptorPool                 m_descriptor_pool;  // Pool used to allocate descriptor sets.
         std::array<VkCommandBuffer, 3>   m_command_buffer;   // Pre-recorded command buffers (triple buffering).
         std::array<VkFramebuffer, 3>     m_fbos;             // Framebuffers used in the depth pass (triple buffered).
 
-        // Map of entities to draw, grouped by a key (e.g., material or layer).
-        std::unordered_map<uint32_t, std::vector<EntityPtr>> m_entities_to_draw;
+        // Vector of entities to draw.
+        std::vector<EntityPtr> m_entities_to_draw;
 
         const ImageBlock m_depth_attachment; // Output depth image to write results into.
     };

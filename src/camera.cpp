@@ -95,22 +95,15 @@ Matrix4f Camera::getViewProjection()
 
 void Camera::rotateAroundOrigin(float radians)
 {
-    // Vector desde el origen hasta la cámara
+    Vector3f origin = Vector3f(0.0f, 0.0f, 0.0f);
     Vector3f pos = m_position;
+    float distance = glm::length(pos - origin);
 
-    // Matriz de rotación en Y
     glm::mat4 rot = glm::rotate(glm::mat4(1.0f), radians, glm::vec3(0, 1, 0));
-
-    // Posición nueva
     glm::vec4 rotated = rot * glm::vec4(pos, 1.0f);
+    
     m_position = Vector3f(rotated.x, rotated.y, rotated.z);
-
-    // Si está usando target, mantenemos mirando al origen
-    if (m_use_target) {
-        m_target = Vector3f(0.0f, 0.0f, 0.0f);
-    }
-
-    // Marcar vista como sucia para que se recalculen las matrices
+    
     m_dirty[0] = true;
 }
 

@@ -11,6 +11,7 @@
 #include "material.h"
 #include "diffuse.h"
 #include "microfacets.h"
+#include "defines.h"
 
 // standard includes
 #include <chrono>
@@ -352,7 +353,8 @@ void Engine::updateGlobalBuffers()
     assert( m_scene );
 
     Camera& cam = const_cast<Camera&>(m_scene->getCamera());
-    
+   
+#ifdef  CAMERA_ROTATION
     // Time-based rotation for consistent speed regardless of framerate
     static auto last_time = std::chrono::high_resolution_clock::now();
     auto current_time = std::chrono::high_resolution_clock::now();
@@ -360,8 +362,9 @@ void Engine::updateGlobalBuffers()
     last_time = current_time;
     
     // Rotate at 30 degrees per second (consistent regardless of FPS)
-    float rotation_speed = glm::radians(30.0f); // degrees per second
+    float rotation_speed = glm::radians(10.0f); // degrees per second
     cam.rotateAroundOrigin(rotation_speed * delta_time);
+#endif //  CAMERA_ROTATION
 
     //global settings
     PerFrameData perframe_data;
